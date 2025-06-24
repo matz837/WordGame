@@ -1,30 +1,24 @@
 import java.util.Random;
 
 public class Numbers {
-    private int randomNum;
+    // randomNum is static so it's shared and persists without an instance.
+    private static int randomNum;
 
-    public int getRandomNum() {
+    public static int getRandomNum() {
         return randomNum;
     }
 
-    public void setRandomNum(int randomNum) {
-        this.randomNum = randomNum;
+    public static void setRandomNum(int newRandomNum) {
+        randomNum = newRandomNum;
     }
 
-    public void generateNumber() {
+    public static void generateNumber() {
         Random rand = new Random();
-        this.randomNum = rand.nextInt(101); // 0 to 100 inclusive
+        randomNum = rand.nextInt(101); // Generates a number from 0-100
     }
 
-    public boolean compareNumber(int guess) {
-        if (guess == randomNum) {
-            System.out.println("Congratulations, you guessed the number!");
-            return true;
-        } else if (guess > randomNum) {
-            System.out.println("I'm sorry. That guess was too high.");
-        } else {
-            System.out.println("I'm sorry. That guess was too low.");
-        }
-        return false;
+    // compareNumber is static and only returns true or false.
+    public static boolean compareNumber(int guess) {
+        return guess == randomNum;
     }
 }

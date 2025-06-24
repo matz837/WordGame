@@ -5,7 +5,7 @@ public class Person {
     // Constructor with only first name
     public Person(String firstName) {
         this.firstName = firstName;
-        this.lastName = "";
+        this.lastName = ""; 
     }
 
     // Constructor with first and last name
