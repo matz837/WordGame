@@ -4,60 +4,67 @@ public class GamePlay {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
-        // 1. Create an instance of the Host class.
         Hosts host = new Hosts("Game", "Master");
+        Players[] currentPlayers = new Players[3];
 
-        // 2. Prompt for player's name and create a Players instance.
-        System.out.print("Enter your first name: ");
-        String firstName = scanner.nextLine();
-
-        System.out.print("Would you like to enter a last name? (yes/no): ");
-        String response = scanner.nextLine();
-
-        Players player;
-        if (response.equalsIgnoreCase("yes")) {
-            System.out.print("Enter your last name: ");
-            String lastName = scanner.nextLine();
-            player = new Players(firstName, lastName);
-        } else {
-            player = new Players(firstName);
+        for (int i = 0; i < currentPlayers.length; i++) {
+            System.out.print("Enter first name for Player " + (i + 1) + ": ");
+            String firstName = scanner.nextLine();
+            currentPlayers[i] = new Players(firstName);
+            System.out.println("Welcome, " + currentPlayers[i].getFirstName() + "!");
         }
-        System.out.println("Welcome, " + player.getFirstName() + "!");
-        System.out.println(player.toString());
 
-        // 3. Create an instance of the Turn class.
+        System.out.println("\n--- Let's Start The Game! ---");
+        for (Players p : currentPlayers) {
+            System.out.println(p.toString());
+        }
+
         Turn turn = new Turn();
-        String playAgainResponse;
+        int currentPlayerIndex = 0;
+        
+        // This boolean now controls the prize type for the entire round of players.
+        // true = Money, false = Physical. It starts with Money.
+        boolean isMoneyRound = true;
 
-        // 4. Outer loop to allow the player to play multiple games.
-        do {
-            // Check if the player has money to play.
-            if (player.getMoney() <= 0) {
-                System.out.println("You don't have any money left to play. Game over!");
-                break;
-            }
+        host.randomizeNum();
 
-            host.randomizeNum();
+        while (true) {
+            Players currentPlayer = currentPlayers[currentPlayerIndex];
 
-            boolean guessedCorrectly = false;
-            // 5. Inner loop for guessing, calls takeTurn() until it returns true or player runs out of money.
-            while (!guessedCorrectly && player.getMoney() > 0) {
-                guessedCorrectly = turn.takeTurn(player, host, scanner);
-            }
-
-            if (player.getMoney() <= 0) {
-                System.out.println("\n--- You've run out of money! ---");
-                break; // Exit the outer loop if money is gone
+            if (currentPlayer.getMoney() <= 0) {
+                System.out.println("\n" + currentPlayer.getFirstName() + " is out of money and cannot play this round.");
+                
+            } else {
+                 // Pass the current round's prize type (isMoneyRound) to the takeTurn method.
+                boolean guessedCorrectly = turn.takeTurn(currentPlayer, host, scanner, isMoneyRound);
+    
+                if (guessedCorrectly) {
+                    System.out.println("\n--- Round Over ---");
+                    System.out.print("Would you like to play another round? (yes/no): ");
+                    String playAgainResponse = scanner.nextLine();
+    
+                    if (playAgainResponse.equalsIgnoreCase("yes")) {
+                        host.randomizeNum();
+                    } else {
+                        break;
+                    }
+                }
             }
             
-            System.out.println("\n--- Round Over ---");
-            System.out.print("Would you like to play another round? (yes/no): ");
-            playAgainResponse = scanner.nextLine();
+            // Move to the next player for the next turn.
+            currentPlayerIndex = (currentPlayerIndex + 1) % currentPlayers.length;
 
-        } while (playAgainResponse.equalsIgnoreCase("yes"));
+            // If the index has reset to 0, it means a full cycle of players is complete and the prize type is changed
+            if (currentPlayerIndex == 0) {
+                isMoneyRound = !isMoneyRound;
+            }
+        }
 
-        System.out.println("\nThank you for playing! Final Status: " + player.toString());
+        System.out.println("\n--- Thank you for playing! ---");
+        System.out.println("Final Standings:");
+        for (Players p : currentPlayers) {
+            System.out.println(p.toString());
+        }
         scanner.close();
     }
 }
