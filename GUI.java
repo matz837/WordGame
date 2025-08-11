@@ -1,5 +1,5 @@
 import javax.swing.*;
-import java.awt.FlowLayout;
+import java.awt.*;
 import java.util.ArrayList;
 
 //Handles the Graphical User Interface and the main game flow for the word game.
@@ -16,127 +16,203 @@ public class GUI extends JFrame {
     private final JLabel hostLabel;
     private final JLabel phraseLabel;
     private final JLabel turnLabel;
-    private final JButton addPlayerButton;
-    private final JButton setPhraseButton;
     private final JButton guessButton;
+    private final JTextArea messageArea;
+    private final JCheckBox saveMessagesCheckbox;
 
     public GUI() {
         // --- Initialize Game Data ---
         this.playerList = new ArrayList<>();
-        this.host = new Hosts("Game", "Master"); // Default host
+        this.host = new Hosts("Game", "Master");
         this.currentPlayerIndex = 0;
         this.isMoneyRound = true;
 
         // --- Frame Setup ---
-        setTitle("Word Game");
-        setSize(500, 250);
+        setTitle("Wheel of Fortune");
+        setSize(600, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20)); // Simple layout
+        // Use BorderLayout for main structure
+        setLayout(new BorderLayout(10, 10));
 
-        // --- Component Initialization & Listeners ---
-        this.turnLabel = new JLabel("Setup the game to begin!");
-        this.hostLabel = new JLabel("Host: " + host.getFirstName());
-        this.playersLabel = new JLabel("Players: No players have been added yet.");
-        this.phraseLabel = new JLabel("Phrase: [Click 'Set Host & Phrase' to start]");
+        // --- Menu Bar ---
+        createMenuBar();
+
+        // --- Panel for Game Info (North) ---
+        JPanel infoPanel = new JPanel(new GridLayout(4, 1, 5, 5));
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        this.addPlayerButton = new JButton("Add Player");
-        addPlayerButton.addActionListener(e -> addPlayer());
+        this.turnLabel = new JLabel("Setup the game to begin!", SwingConstants.CENTER);
+        this.hostLabel = new JLabel("Host: " + host.getFirstName(), SwingConstants.CENTER);
+        this.phraseLabel = new JLabel("Phrase: [Start a New Round to Begin]", SwingConstants.CENTER);
+        
+        infoPanel.add(turnLabel);
+        infoPanel.add(hostLabel);
+        infoPanel.add(phraseLabel);
 
-        this.setPhraseButton = new JButton("Set Host & Phrase");
-        setPhraseButton.addActionListener(e -> setHostAndPhrase());
+        // --- Panel for Player List (West) ---
+        JPanel playerPanel = new JPanel(new BorderLayout());
+        playerPanel.setBorder(BorderFactory.createTitledBorder("Players"));
+        this.playersLabel = new JLabel("<html>No players yet.</html>");
+        playerPanel.add(playersLabel, BorderLayout.NORTH);
 
+        // --- Message Area for Game Log (Center) ---
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBorder(BorderFactory.createTitledBorder("Game Log"));
+        this.messageArea = new JTextArea("Welcome to the Game!\n");
+        this.messageArea.setEditable(false);
+        JScrollPane messageScrollPane = new JScrollPane(messageArea);
+        messagePanel.add(messageScrollPane, BorderLayout.CENTER);
+
+        // --- Controls Panel (South) ---
+        JPanel controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         this.guessButton = new JButton("Guess a Letter");
         guessButton.addActionListener(e -> takeTurn());
-        guessButton.setEnabled(false); // Disabled until game is ready
+        guessButton.setEnabled(false);
 
-        // --- Add Components to Frame ---
-        add(turnLabel);
-        add(hostLabel);
-        add(phraseLabel);
-        add(playersLabel);
-        add(addPlayerButton);
-        add(setPhraseButton);
-        add(guessButton);
+        this.saveMessagesCheckbox = new JCheckBox("Save Messages");
+        saveMessagesCheckbox.setToolTipText("If checked, new messages will be added to the log. If unchecked, they will replace the old message.");
+        
+        controlsPanel.add(guessButton);
+        controlsPanel.add(saveMessagesCheckbox);
+
+        // --- Add Panels to Frame ---
+        add(infoPanel, BorderLayout.NORTH);
+        add(playerPanel, BorderLayout.WEST);
+        add(messagePanel, BorderLayout.CENTER);
+        add(controlsPanel, BorderLayout.SOUTH);
 
         // Make the frame visible
+        setLocationRelativeTo(null); // Center on screen
         setVisible(true);
     }
-    
-    //Prompts for a new player's name and adds them to the game.
+
+    //Creates and configures the JMenuBar and its items.
+    private void createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // --- Game Menu ---
+        JMenu gameMenu = new JMenu("Game");
+        gameMenu.setMnemonic('G');
+
+        JMenuItem addPlayerMenuItem = new JMenuItem("Add Player");
+        addPlayerMenuItem.addActionListener(e -> addPlayer());
+
+        JMenuItem startRoundMenuItem = new JMenuItem("Start New Round");
+        startRoundMenuItem.addActionListener(e -> startNewRound());
+
+        gameMenu.add(addPlayerMenuItem);
+        gameMenu.add(startRoundMenuItem);
+
+        // --- About Menu ---
+        JMenu aboutMenu = new JMenu("About");
+        aboutMenu.setMnemonic('A');
+
+        JMenuItem aboutLayoutMenuItem = new JMenuItem("About Layout");
+        aboutLayoutMenuItem.addActionListener(e -> showLayoutInfo());
+
+        aboutMenu.add(aboutLayoutMenuItem);
+
+        menuBar.add(gameMenu);
+        menuBar.add(aboutMenu);
+        setJMenuBar(menuBar);
+    }
+
+    //Logs a message to the text area, respecting the saveMessagesCheckbox.
+    private void logMessage(String message) {
+        if (saveMessagesCheckbox.isSelected()) {
+            messageArea.append(message + "\n");
+        } else {
+            messageArea.setText(message + "\n");
+        }
+        // Auto-scroll to the bottom
+        messageArea.setCaretPosition(messageArea.getDocument().getLength());
+    }
+
+    //Prompts for and adds a new player to the game.
     private void addPlayer() {
         String name = JOptionPane.showInputDialog(this, "Enter player's name:", "Add Player", JOptionPane.PLAIN_MESSAGE);
         if (name != null && !name.trim().isEmpty()) {
             playerList.add(new Players(name.trim()));
             updatePlayersLabel();
             checkGameState();
+            logMessage("Player " + name.trim() + " has joined the game.");
         }
     }
 
-    //Prompts for the host's name and changed so that the host sets the secret phrase for the round.
-    private void setHostAndPhrase() {
+    //Sets up a new round by assigning a host and a secret phrase.
+    private void startNewRound() {
         String hostName = JOptionPane.showInputDialog(this, "Enter host's name:", "Set Host", JOptionPane.PLAIN_MESSAGE);
         if (hostName != null && !hostName.trim().isEmpty()) {
             this.host = new Hosts(hostName.trim(), "");
             hostLabel.setText("Host: " + host.getFirstName());
         }
 
-        String gamePhrase = JOptionPane.showInputDialog(this, "Enter the phrase for the game:", "Set Phrase", JOptionPane.PLAIN_MESSAGE);
-        if (gamePhrase != null && !gamePhrase.trim().isEmpty()) {
-            Phrases.setGamePhrase(gamePhrase);
-            updatePhraseLabel();
-            checkGameState();
+        // Host selects a phrase automatically now
+        host.setNewPhrase();
+        logMessage(host.getFirstName() + " has selected a new secret phrase.");
+        
+        // Reset player money and state for the new round
+        for (Players p : playerList) {
+            p.setMoney(1000);
         }
+        currentPlayerIndex = 0;
+        isMoneyRound = true;
+
+        updatePhraseLabel();
+        updatePlayersLabel();
+        checkGameState();
     }
     
     //Executes a single player's turn.
     private void takeTurn() {
         Players currentPlayer = playerList.get(currentPlayerIndex);
 
-        // Skips the turn if the player is out of money.
-        if (currentPlayer.getMoney() <= 0) {
-            JOptionPane.showMessageDialog(this, currentPlayer.getFirstName() + " is out of money and must skip a turn.", "Out of Money", JOptionPane.INFORMATION_MESSAGE);
+        if (currentPlayer.getMoney() <= 0 && isMoneyRound) {
+            logMessage(currentPlayer.getFirstName() + " is out of money and must skip a turn.");
             nextPlayer();
             return;
         }
 
-        // Prompts the player to guess a letter.
         String guess = JOptionPane.showInputDialog(this, currentPlayer.getFirstName() + ", please guess a letter:", "Guess a Letter", JOptionPane.PLAIN_MESSAGE);
-        if (guess == null) return; // Player cancelled the dialog.
+        if (guess == null) return; // Player cancelled
 
         boolean letterFound;
-        String turnSummary;
-        int moneyChange;
+        Award award = isMoneyRound ? new Money() : new Physical();
 
-        // Processes the guess and handles exceptions.
         try {
             letterFound = Phrases.findLetters(guess.trim());
         } catch (MultipleLettersException ex) {
-            letterFound = false; // Treat as an incorrect guess.
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
+            letterFound = false;
+            logMessage("Error: " + ex.getMessage() + ". This counts as an incorrect guess.");
         }
 
-        // Determine award, replacing console output with dialog messages.
-        Award award = isMoneyRound ? new Money() : new Physical();
-        moneyChange = award.displayWinnings(new Players(""), letterFound); // Use a dummy player to get the value without printing.
-        
+        // Handle winnings and update game state
         if (letterFound) {
-            turnSummary = "Good guess! That letter is in the phrase.";
+            logMessage("Good guess! '" + guess.toUpperCase() + "' is in the phrase.");
         } else {
-            turnSummary = "Sorry, that letter isn't in the phrase.";
+            logMessage("Sorry, '" + guess.toUpperCase() + "' is not in the phrase.");
         }
 
-        currentPlayer.setMoney(currentPlayer.getMoney() + moneyChange);
+        // Apply award logic
+        if (isMoneyRound) {
+            int moneyChange = ((Money) award).displayWinnings(currentPlayer, letterFound);
+            currentPlayer.setMoney(currentPlayer.getMoney() + moneyChange);
+            logMessage(currentPlayer.getFirstName() + (moneyChange >= 0 ? " won $" : " lost $") + Math.abs(moneyChange));
+        } else {
+            // We need to cast to get the prize details for the log
+            String prize = ((Physical) award).getPrizeForDisplay(letterFound);
+            logMessage(currentPlayer.getFirstName() + " " + prize);
+        }
+        
+        // Ensure money never drops below zero
         if (currentPlayer.getMoney() < 0) {
             currentPlayer.setMoney(0);
         }
-
-        // Show a summary of the turn's result in a dialog.
-        JOptionPane.showMessageDialog(this, turnSummary + "\n" + currentPlayer.toString(), "Turn Result", JOptionPane.INFORMATION_MESSAGE);
-
+        
         updatePhraseLabel();
         updatePlayersLabel();
 
-        // Check for a win.
+        // Check for a win condition
         if (Phrases.isPhraseGuessed()) {
             handleWin(currentPlayer);
         } else {
@@ -144,27 +220,28 @@ public class GUI extends JFrame {
         }
     }
     
-    //Handles the win condition and prompts the user to play again.
+    //Handles the win condition and prompts to play again.
     private void handleWin(Players winner) {
+        logMessage("Congratulations " + winner.getFirstName() + "! You solved the phrase!");
+        logMessage("The phrase was: " + Phrases.getPlayingPhrase());
         JOptionPane.showMessageDialog(this, "Congratulations " + winner.getFirstName() + "! You solved the phrase!", "Round Over!", JOptionPane.INFORMATION_MESSAGE);
+        
         int choice = JOptionPane.showConfirmDialog(this, "Would you like to play another round?", "Play Again?", JOptionPane.YES_NO_OPTION);
 
         if (choice == JOptionPane.YES_OPTION) {
-            resetForNewRound();
+            resetForNewGame();
         } else {
-            // End the game by disabling controls.
+            // End game
             guessButton.setEnabled(false);
-            setPhraseButton.setEnabled(false);
-            addPlayerButton.setEnabled(false);
             turnLabel.setText("Game Over! Thanks for playing!");
         }
     }
 
-    //Updates the label that displays the list of players and their money.
+    //Updates the label that displays the players and their scores.
     private void updatePlayersLabel() {
-        StringBuilder sb = new StringBuilder("<html>Players:<br>"); // Using HTML for multiline label.
+        StringBuilder sb = new StringBuilder("<html>");
         if (playerList.isEmpty()) {
-            sb.append("No players have been added yet.");
+            sb.append("No players yet.");
         } else {
             for (Players p : playerList) {
                 sb.append(p.toString()).append("<br>");
@@ -174,7 +251,7 @@ public class GUI extends JFrame {
         playersLabel.setText(sb.toString());
     }
 
-    //Updates the label showing the current state of the phrase.
+    //Updates the label showing the current masked phrase.
     private void updatePhraseLabel() {
         phraseLabel.setText("Phrase: " + Phrases.getPlayingPhrase());
     }
@@ -185,37 +262,44 @@ public class GUI extends JFrame {
         if (currentPlayerIndex == 0) {
             isMoneyRound = !isMoneyRound;
             String prizeType = isMoneyRound ? "Cash" : "Physical Prizes";
-            JOptionPane.showMessageDialog(this, "Prize type has switched to: " + prizeType, "Prize Switch", JOptionPane.INFORMATION_MESSAGE);
+            logMessage("--- Round Complete! Prize type has switched to: " + prizeType + " ---");
         }
         turnLabel.setText("Turn: " + playerList.get(currentPlayerIndex).getFirstName());
     }
-    //Checks if the game has enough information (players and a phrase) to start.   
+    
+    //Checks if the game has enough players and a phrase to start.
     private void checkGameState() {
         if (!playerList.isEmpty() && Phrases.getPlayingPhrase() != null && !Phrases.getPlayingPhrase().isEmpty()) {
             guessButton.setEnabled(true);
-            setPhraseButton.setEnabled(false); // Phrase is set, disable until round is over.
             turnLabel.setText("Turn: " + playerList.get(currentPlayerIndex).getFirstName());
+            logMessage("The game is ready. " + playerList.get(currentPlayerIndex).getFirstName() + " starts!");
         }
     }
-    //Resets the game state for a new round.
-    private void resetForNewRound() {
-        // Reset player money.
-        for (Players p : playerList) {
-            p.setMoney(1000);
-        }
-        currentPlayerIndex = 0;
-        isMoneyRound = true;
+    
+    //Resets the game state for a completely new game, clearing the log.
+    private void resetForNewGame() {
+        // Clear message log for new game
+        messageArea.setText("");
         
-        // Update labels and button states.
-        phraseLabel.setText("Phrase: [Click 'Set Host & Phrase' for new round]");
-        updatePlayersLabel();
-        turnLabel.setText("Setup new round!");
+        // Prompt to start a new round which handles all setup
+        logMessage("Starting a new game! Use the 'Game' menu to begin.");
+        phraseLabel.setText("Phrase: [Start a New Round to Begin]");
+        turnLabel.setText("Setup new game!");
         guessButton.setEnabled(false);
-        setPhraseButton.setEnabled(true);
+    }
+
+    
+    //Displays a dialog with information about the layout choice.
+    private void showLayoutInfo() {
+        String info = "NORTH: Game status information (turn, host, phrase).\n"
+                    + "WEST: A persistent list of players and their scores.\n"
+                    + "CENTER: The main game log, which needs flexible space.\n"
+                    + "SOUTH: Primary user controls.\n\n";
+        JOptionPane.showMessageDialog(this, info, "About Layout", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static void main(String[] args) {
-        // Ensures the GUI is created on the Event Dispatch Thread.
+        // Ensures the GUI is created on the Event Dispatch Thread
         SwingUtilities.invokeLater(GUI::new);
     }
 }

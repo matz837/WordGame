@@ -2,7 +2,7 @@ import java.util.Random;
 
 public class Physical implements Award {
 
-    // An array of at least 5 physical prizes.
+    // An array of physical prizes.
     private final String[] prizes = {
         "a Brand New Car",
         "a New Macbook Pro",
@@ -12,23 +12,26 @@ public class Physical implements Award {
     };
 
     //Gets a random prize from the prizes array.
-    private int getRandomPrize() {
+    private String getRandomPrize() {
         Random rand = new Random();
-        return rand.nextInt(prizes.length);
+        return prizes[rand.nextInt(prizes.length)];
     }
 
+    //This method is part of the interface but no longer displays anything.
+    //It simply returns 0 as physical prizes do not affect money.
     @Override
     public int displayWinnings(Players player, boolean wasCorrect) {
-        int prizeIndex = getRandomPrize();
-        String prize = prizes[prizeIndex];
-
-        if (wasCorrect) {
-            System.out.println(player.getFirstName() + " won " + prize + "!");
-        } else {
-            System.out.println("Tough luck, " + player.getFirstName() + ". You could have won " + prize + ".");
-        }
-        
         // Physical prizes do not affect the player's money.
         return 0;
+    }
+
+    //Gets a formatted string describing the prize outcome for the GUI.
+    public String getPrizeForDisplay(boolean wasCorrect) {
+        String prize = getRandomPrize();
+        if (wasCorrect) {
+            return "won " + prize + "!";
+        } else {
+            return "could have won " + prize + ".";
+        }
     }
 }

@@ -7,7 +7,7 @@ public class Hosts extends Players {
         "A piece of cake",
         "Once in a blue moon",
         "The early bird gets the worm",
-        "You just won a pirze"
+        "You just won a prize"
     };
 
     public Hosts(String firstName, String lastName) {
@@ -15,12 +15,12 @@ public class Hosts extends Players {
         this.setMoney(0);
     }
 
-    // Selects a new random phrase and sets it in the Phrases class for the round.
+    
+    //Selects a new random phrase and sets it in the Phrases class.
     public void setNewPhrase() {
-        System.out.println("\n" + getFirstName() + " is thinking of a new phrase...");
+        // The GUI will now announce this action
         Random rand = new Random();
         String chosenPhrase = PHRASE_LIST[rand.nextInt(PHRASE_LIST.length)];
-        // Use the Phrases class to set up the chosen phrase.
         Phrases.setGamePhrase(chosenPhrase);
     }
 }

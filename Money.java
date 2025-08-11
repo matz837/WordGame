@@ -5,12 +5,10 @@ public class Money implements Award {
 
     @Override
     public int displayWinnings(Players player, boolean wasCorrect) {
+        // Logic now only returns the value; GUI handles the display message.
         if (wasCorrect) {
-            System.out.println(player.getFirstName() + " won $" + WINNING_AMOUNT + "!");
             return WINNING_AMOUNT;
         } else {
-            System.out.println(player.getFirstName() + " lost $" + INCORRECT_GUESS_PENALTY + ".");
-            // Return a negative value for the penalty.
             return -INCORRECT_GUESS_PENALTY;
         }
     }
